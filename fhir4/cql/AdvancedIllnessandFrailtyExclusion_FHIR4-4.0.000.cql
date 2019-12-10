@@ -1,4 +1,4 @@
-library AdvancedIllnessandFrailtyExclusion_FHIR4 version '4.0.000'
+library AdvancedIllnessandFrailtyExclusionECQM version '4.0.000'
 
 using FHIR version '4.0.0'
 
@@ -62,28 +62,28 @@ define "Inpatient Encounter with Advanced Illness":
 
 define "Dementia Medications In Year Before or During Measurement Period":
 	["MedicationDispense": "Dementia Medications"] DementiaMed
-		where DementiaMed.whenHandedOver as dateTime during day of Interval[
+		where FHIRHelpers.ToDateTime(DementiaMed.whenHandedOver) during day of Interval[
             ( start of "Measurement Period" - 1 year ), end of "Measurement Period"
         ]
 
 define "Has Criteria Indicating Frailty":
 	exists ( [DeviceRequest: "Frailty Device"] FrailtyDeviceOrder
-			where FrailtyDeviceOrder.authoredOn during day of "Measurement Period"
+			where FHIRHelpers.ToDateTime(FrailtyDeviceOrder.authoredOn) during day of "Measurement Period"
 	)
-		or exists ( [DeviceUseStatement: "Frailty Device"] FrailtyDeviceUse
-				where FrailtyDeviceUse.timing as Period overlaps "Measurement Period"
-                    or FrailtyDeviceUse.timing as dateTime during day of "Measurement Period"
-		)
+		//or exists ( [DeviceUseStatement: "Frailty Device"] FrailtyDeviceUse
+			//	where FrailtyDeviceUse.timing as Period overlaps "Measurement Period"
+                   // or FHIRHelpers.ToDateTime(FrailtyDeviceUse.timing) during day of "Measurement Period"
+		//)
 		or exists ( [Condition: "Frailty Diagnosis"] FrailtyDiagnosis
 				where FrailtyDiagnosis.onset as Period overlaps "Measurement Period"
-                    or FrailtyDiagnosis.onset as dateTime during day of "Measurement Period"
+                    or FHIRHelpers.ToDateTime(FrailtyDiagnosis.onset) during day of "Measurement Period"
 		)
 		or exists ( [Encounter: "Frailty Encounter"] FrailtyEncounter
 				where FrailtyEncounter.period overlaps "Measurement Period"
 		)
 		or exists ( [Observation: "Frailty Symptom"] FrailtySymptomObservation
 				where FrailtySymptomObservation.effective as Period overlaps "Measurement Period"
-                    or FrailtySymptomObservation.effective as dateTime during day of "Measurement Period"
+                    or (FrailtySymptomObservation.effective as Period) during day of "Measurement Period"
 		)
 
 define "Advanced Illness and Frailty Exclusion Including Over Age 80":
